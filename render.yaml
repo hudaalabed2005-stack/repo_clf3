@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: fresh-or-rotten-api
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn -k uvicorn.workers.UvicornWorker server:app --bind 0.0.0.0:10000"
+    envVars:
+      - key: ROBOFLOW_API_KEY
+        sync: false   # set in Render dashboard
+      - key: RF_PROJECT
+        value: fresh-or-rotten-detection-1yxeg
+      - key: RF_VERSION
+        value: "1"
+      # RF_HOST defaults to https://detect.roboflow.com; override if needed
