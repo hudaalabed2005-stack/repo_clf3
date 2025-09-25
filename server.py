@@ -107,45 +107,54 @@ def extract_top_detection(resp_obj):
 # ------------------ /predict (Detect) ------------------
 @app.post("/predict")
 async def predict(image: UploadFile = File(...)):
-    """
-    Accept an uploaded image, call Roboflow Detect (object detection),
-    cache the raw response, return JSON or error.
-    """
     data = await image.read()
     try:
-        headers = {
-            "Authorization": f"Bearer {ROBOFLOW_API_KEY}",
-            "Accept": "application/json"
-        }
         files = {"file": ("image.jpg", data, image.content_type or "image/jpeg")}
-        # You can add params like confidence/overlap if you want:
-        # params = {"confidence": 0.5, "overlap": 0.3}
-        resp = requests.post(DETECT_URL, headers=headers, files=files, timeout=60)
+        # Pass API key as query param (this is the most reliable path with Detect)
+        params = {
+            "api_key": ROBOFLOW_API_KEY,
+            # Optional tuning (uncomment to use):
+            # "confidence": 0.5,
+            # "overlap": 0.3,
+            # "format": "json",
+        }
+        resp = requests.post(DETECT_URL, params=params, files=files, timeout=60)
+
+        # Helpful debugging in Render logs
+        if resp.status_code >= 400:
+            print("Roboflow error:", resp.status_code, resp.text[:500])
+
         if resp.status_code == 403:
             return JSONResponse(
                 {
                     "error": "roboflow_403",
-                    "detail": "Roboflow detect forbidden (403). Check API key, project path, and Hosted API deploy.",
-                    "endpoint": DETECT_URL
+                    "detail": "Forbidden (403). Check API key / model path / Hosted API deploy.",
+                    "endpoint": resp.url,
                 },
-                status_code=502
+                status_code=502,
             )
+
         resp.raise_for_status()
         j = resp.json()
+
     except requests.exceptions.RequestException as e:
+        # Print to logs so you can see the exact reason in Render
+        print("Roboflow request exception:", repr(e))
         return JSONResponse(
             {"error": "roboflow_request_failed", "detail": str(e), "endpoint": DETECT_URL},
-            status_code=502
+            status_code=502,
         )
     except ValueError:
+        print("Roboflow non-JSON response:", resp.text[:500])
         return JSONResponse(
             {"error": "roboflow_non_json", "detail": resp.text[:500], "endpoint": DETECT_URL},
-            status_code=502
+            status_code=502,
         )
 
     LAST["vision"] = j
     LAST["vision_updated"] = datetime.utcnow().isoformat()
     return JSONResponse(j)
+
 
 # ------------------ Gas model ------------------
 class GasReading(BaseModel):
