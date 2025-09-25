@@ -426,7 +426,7 @@ def ui():
 
   </div>
 
-  <footer>© 2025 Fruit Detector • FastAPI + Roboflow Detect + MQ-135</footer>
+  <footer>© 2025 Fruit Detector • FastAPI + Detect + MQ-135</footer>
   <div id="toast" class="toast">Saved ✔</div>
 
 <script>
@@ -517,7 +517,7 @@ async function sendGas(){
   }finally{ setStatus('gas','idle'); }
 }
 function resetGas(){ el.adc.value="1800"; el.vref.value="3.3"; el.rl.value="10000"; el.r0.value="10000"; }
-function preset(type){ if(type==='fresh'){ el.adc.value="1200"; el.r0.value="12000"; } if(type==='spoiled'){ el.adc.value="2500"; el.r0.value="8000"; } }
+function preset(type){ if(type==='fresh'){ el.adc.value="700"; el.r0.value="12000"; } if(type==='spoiled'){ el.adc.value="2500"; el.r0.value="8000"; } }
 async function saveSnap(){ const r = await fetch('/cron/snapshot', {method:'POST'}); const j = await r.json(); if(j.ok){ await loadChart(true); toast('Snapshot saved ✔'); } else { alert('No reading to save yet.'); } }
 
 /* Summary */
